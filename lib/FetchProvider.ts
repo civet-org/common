@@ -48,118 +48,116 @@ export type FetchOptions<
   ) => Promise<ResponseType> | ResponseType;
 };
 
-const FetchProvider = eventPlugin(
-  class FetchProvider<
-    Item = unknown,
-    ResponseType extends Item | Item[] = Item | Item[],
-    Query extends RequestInit | undefined = RequestInit | undefined,
-    MetaType extends Meta = Meta,
-    Options extends FetchOptions<Item, MetaType, ResponseType> = FetchOptions<
-      Item,
-      MetaType,
-      ResponseType
-    >,
-  > extends DataProvider<Item, Query, Options, MetaType, ResponseType> {
-    private options: FetchProviderOptions<Item, MetaType, ResponseType>;
+class FetchProvider<
+  Item = unknown,
+  ResponseType extends Item | Item[] = Item | Item[],
+  Query extends RequestInit | undefined = RequestInit | undefined,
+  MetaType extends Meta = Meta,
+  Options extends FetchOptions<Item, MetaType, ResponseType> = FetchOptions<
+    Item,
+    MetaType,
+    ResponseType
+  >,
+> extends DataProvider<Item, Query, Options, MetaType, ResponseType> {
+  private options: FetchProviderOptions<Item, MetaType, ResponseType>;
 
-    constructor(
-      options: FetchProviderOptions<Item, MetaType, ResponseType> = {},
-    ) {
-      super();
-      this.options = options;
-    }
+  constructor(
+    options: FetchProviderOptions<Item, MetaType, ResponseType> = {},
+  ) {
+    super();
+    this.options = options;
+  }
 
-    handleGet(
-      url: string,
-      query: Query,
-      options: Options | undefined,
-      meta: MetaType,
-      abortSignal: AbortSignalProxy,
-    ): Promise<ResponseType> {
-      return this.request(url, query, options, meta, abortSignal);
-    }
+  handleGet(
+    url: string,
+    query: Query,
+    options: Options | undefined,
+    meta: MetaType,
+    abortSignal: AbortSignalProxy,
+  ): Promise<ResponseType> {
+    return this.request(url, query, options, meta, abortSignal);
+  }
 
-    async request<
-      ResponseTypeI extends ResponseType = ResponseType,
-      QueryI extends Query = Query,
-      OptionsI extends Options = Options,
-      MetaTypeI extends MetaType = MetaType,
-    >(
-      url: string,
-      query: QueryI,
-      options?: OptionsI | undefined,
-      meta?: MetaTypeI,
-      abortSignal?: AbortSignalProxy,
-    ): Promise<ResponseTypeI> {
-      meta = meta instanceof Meta ? meta : (new Meta(meta) as MetaTypeI);
+  async request<
+    ResponseTypeI extends ResponseType = ResponseType,
+    QueryI extends Query = Query,
+    OptionsI extends Options = Options,
+    MetaTypeI extends MetaType = MetaType,
+  >(
+    url: string,
+    query: QueryI,
+    options?: OptionsI | undefined,
+    meta?: MetaTypeI,
+    abortSignal?: AbortSignalProxy,
+  ): Promise<ResponseTypeI> {
+    meta = meta instanceof Meta ? meta : (new Meta(meta) as MetaTypeI);
 
-      const controller = new AbortController();
-      abortSignal?.listen(controller.abort.bind(controller));
+    const controller = new AbortController();
+    abortSignal?.listen(controller.abort.bind(controller));
 
-      const requestURL = new URL(url, this.options.baseURL);
-      const headers = new Headers(query?.headers);
-      const request = { ...query, headers };
-      await this.options.modifyRequest?.(requestURL, request, meta);
+    const requestURL = new URL(url, this.options.baseURL);
+    const headers = new Headers(query?.headers);
+    const request = { ...query, headers };
+    await this.options.modifyRequest?.(requestURL, request, meta);
 
-      const response = await fetch(requestURL.toString(), {
-        ...request,
-        signal: AbortSignal.any(
-          [request.signal, controller.signal].filter(
-            (signal) => signal != null,
-          ),
-        ),
-      });
+    const response = await fetch(requestURL.toString(), {
+      ...request,
+      signal: AbortSignal.any(
+        [request.signal, controller.signal].filter((signal) => signal != null),
+      ),
+    });
 
-      if (!response.ok) {
-        if (options?.handleError)
-          return options.handleError(
-            requestURL,
-            request,
-            response,
-            meta,
-          ) as Promise<ResponseTypeI>;
-        if (this.options.handleError)
-          return this.options.handleError(
-            requestURL,
-            request,
-            response,
-            meta,
-          ) as Promise<ResponseTypeI>;
-
-        throw new Error(response.statusText);
-      }
-
-      if (options?.getResponse)
-        return options.getResponse(
+    if (!response.ok) {
+      if (options?.handleError)
+        return options.handleError(
           requestURL,
           request,
           response,
           meta,
         ) as Promise<ResponseTypeI>;
-      if (this.options.getResponse)
-        return this.options.getResponse(
+      if (this.options.handleError)
+        return this.options.handleError(
           requestURL,
           request,
           response,
           meta,
         ) as Promise<ResponseTypeI>;
 
-      if (
-        options?.json ||
-        (!options?.noJson &&
-          /^application\/[^+]*[+]?(json);?.*$/.test(
-            response.headers.get('Content-Type') ?? '',
-          ))
-      )
-        return response.json();
-
-      if (!options?.noText) return response.text() as Promise<ResponseTypeI>;
-
-      throw new Error('unprocessable response');
+      throw new Error(response.statusText);
     }
-  },
-);
 
-export default FetchProvider;
+    if (options?.getResponse)
+      return options.getResponse(
+        requestURL,
+        request,
+        response,
+        meta,
+      ) as Promise<ResponseTypeI>;
+    if (this.options.getResponse)
+      return this.options.getResponse(
+        requestURL,
+        request,
+        response,
+        meta,
+      ) as Promise<ResponseTypeI>;
 
-export type FetchProviderType = InstanceType<typeof FetchProvider>;
+    if (
+      options?.json ||
+      (!options?.noJson &&
+        /^application\/[^+]*[+]?(json);?.*$/.test(
+          response.headers.get('Content-Type') ?? '',
+        ))
+    )
+      return response.json();
+
+    if (!options?.noText) return response.text() as Promise<ResponseTypeI>;
+
+    throw new Error('unprocessable response');
+  }
+}
+
+const FetchProviderWithPlugins = eventPlugin(FetchProvider);
+
+export default FetchProviderWithPlugins;
+
+export type FetchProviderType = InstanceType<typeof FetchProviderWithPlugins>;
