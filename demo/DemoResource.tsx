@@ -1,7 +1,7 @@
-import type { FetchProviderType } from '@/FetchProvider';
-import type { SSEReceiverType } from '@/SSEReceiver';
 import { useResource } from '@civet/core';
 import { useEventHandler } from '@civet/events';
+import type { FetchProviderType } from '@/FetchProvider';
+import type { SSEReceiverType } from '@/SSEReceiver';
 
 export default function DemoResource() {
   const resource = useResource<FetchProviderType>({
