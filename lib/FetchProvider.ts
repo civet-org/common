@@ -68,13 +68,13 @@ export default class FetchProvider<
   }
 
   handleGet(
-    resource: string,
+    url: string,
     query: Query,
     options: Options | undefined,
     meta: MetaType,
     abortSignal: AbortSignalProxy,
   ): Promise<ResponseType> {
-    return this.request(resource, query, options, meta, abortSignal);
+    return this.request(url, query, options, meta, abortSignal);
   }
 
   async request<
@@ -83,7 +83,7 @@ export default class FetchProvider<
     OptionsI extends Options = Options,
     MetaTypeI extends MetaType = MetaType,
   >(
-    resource: string,
+    url: string,
     query: QueryI,
     options?: OptionsI | undefined,
     meta?: MetaTypeI,
@@ -94,12 +94,12 @@ export default class FetchProvider<
     const controller = new AbortController();
     abortSignal?.listen(controller.abort.bind(controller));
 
-    const url = new URL(resource, this.options.baseURL);
+    const requestURL = new URL(url, this.options.baseURL);
     const headers = new Headers(query?.headers);
     const request = { ...query, headers };
-    await this.options.modifyRequest?.(url, request, meta);
+    await this.options.modifyRequest?.(requestURL, request, meta);
 
-    const response = await fetch(url.toString(), {
+    const response = await fetch(requestURL.toString(), {
       ...request,
       signal: AbortSignal.any(
         [request.signal, controller.signal].filter((signal) => signal != null),
@@ -109,14 +109,14 @@ export default class FetchProvider<
     if (!response.ok) {
       if (options?.handleError)
         return options.handleError(
-          url,
+          requestURL,
           request,
           response,
           meta,
         ) as Promise<ResponseTypeI>;
       if (this.options.handleError)
         return this.options.handleError(
-          url,
+          requestURL,
           request,
           response,
           meta,
@@ -127,14 +127,14 @@ export default class FetchProvider<
 
     if (options?.getResponse)
       return options.getResponse(
-        url,
+        requestURL,
         request,
         response,
         meta,
       ) as Promise<ResponseTypeI>;
     if (this.options.getResponse)
       return this.options.getResponse(
-        url,
+        requestURL,
         request,
         response,
         meta,
