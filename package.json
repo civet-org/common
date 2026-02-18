@@ -44,16 +44,15 @@
     "postversion": "git commit -am$npm_package_version",
     "prepublishOnly": "npm run build"
   },
-  "dependencies": {},
   "peerDependencies": {
-    "@civet/core": ">=2.0",
-    "@civet/events": ">=2.0",
+    "@civet/core": ">=6.0",
+    "@civet/events": ">=3.0",
     "react": ">=18.0",
     "react-dom": ">=18.0"
   },
   "devDependencies": {
-    "@civet/core": "^3.0.1",
-    "@civet/events": "^2.0.0",
+    "@civet/core": "^6.0.2",
+    "@civet/events": "^3.0.1",
     "@eslint/js": "^9.35.0",
     "@types/react": "^19.1.12",
     "@types/react-dom": "^19.1.9",
