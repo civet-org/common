@@ -6,7 +6,7 @@ export type FetchProviderOptions<
   MetaType extends Meta = Meta,
   ResponseType extends Item | Item[] | void = Item | Item[] | void,
 > = {
-  baseURL?: string;
+  baseURL?: string | URL;
   modifyRequest?: (
     url: URL,
     request: RequestInit,
