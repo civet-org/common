@@ -1,19 +1,15 @@
 import { useResource } from '@civet/core';
-import { useEventHandler } from '@civet/events';
 import type { FetchProviderType } from '@/FetchProvider';
-import type { SSEReceiverType } from '@/SSEReceiver';
 
 export default function DemoResource() {
   const resource = useResource<FetchProviderType>({
     name: 'https://jsonplaceholder.typicode.com/todos/1',
     query: undefined,
-  });
-
-  useEventHandler<SSEReceiverType>({
-    resource,
-    onEvent: (event) => {
-      console.log(event);
-      return false;
+    events: {
+      onEvent: (event) => {
+        console.log(event);
+        return false;
+      },
     },
   });
 
