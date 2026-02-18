@@ -69,7 +69,7 @@ export default class FetchProvider<
 
   handleGet(
     resource: string,
-    query: Query & { method?: RequestInit['method'] },
+    query: Query,
     options: Options | undefined,
     meta: MetaType,
     abortSignal: AbortSignalProxy,
