@@ -78,6 +78,10 @@ class FetchProvider<
     return this.request(url, query, options, meta, abortSignal);
   }
 
+  normalizeResource(resource: string): string {
+    return new URL(resource, this.options.baseURL).toString();
+  }
+
   async request<
     ResponseTypeI extends ResponseType = ResponseType,
     QueryI extends Query = Query,
@@ -95,7 +99,7 @@ class FetchProvider<
     const controller = new AbortController();
     abortSignal?.listen(controller.abort.bind(controller));
 
-    const requestURL = new URL(url, this.options.baseURL);
+    const requestURL = new URL(url);
     const headers = new Headers(query?.headers);
     const request = { ...query, headers };
     await this.options.modifyRequest?.(requestURL, request, meta);

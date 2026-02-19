@@ -1,4 +1,8 @@
-import type { GenericDataProvider, ResourceContextValue } from '@civet/core';
+import type {
+  GenericDataProvider,
+  Notifier,
+  ResourceContextValue,
+} from '@civet/core';
 import { EventReceiver } from '@civet/events';
 
 export type SSEReceiverOptions<
@@ -6,7 +10,7 @@ export type SSEReceiverOptions<
   EventType = MessageEvent,
 > = {
   getEvents?: (
-    resource: Resource,
+    resource: Resource | undefined,
     type: string,
     event: MessageEvent,
   ) => Promise<EventType[]> | EventType[];
@@ -18,7 +22,7 @@ export type SSEOptions<
 > = {
   events?: string[];
   getEvents?: (
-    resource: Resource,
+    resource: Resource | undefined,
     type: string,
     event: MessageEvent,
   ) => Promise<EventType[]> | EventType[];
@@ -31,7 +35,7 @@ export default class SSEReceiver<
     Resource,
     EventType
   >,
-> extends EventReceiver<Resource, EventType, Options> {
+> extends EventReceiver<EventType, Resource, Options> {
   readonly eventSource: EventSource;
   private options: SSEReceiverOptions<Resource, EventType>;
 
@@ -45,11 +49,19 @@ export default class SSEReceiver<
   }
 
   handleSubscribe(
-    resource: Resource,
+    resourceNotifier: Notifier<[Resource | undefined]>,
     options: Options | undefined,
     handler: (events: EventType[]) => void,
   ): () => void {
+    let resource: Resource | undefined;
+    const unsubResource = resourceNotifier.subscribe(
+      (nextResource: Resource | undefined) => {
+        resource = nextResource;
+      },
+    );
+
     const controller = new AbortController();
+    controller.signal.addEventListener('abort', unsubResource);
 
     const types = options?.events?.length ? options.events : ['message'];
     types.forEach((type) => {
