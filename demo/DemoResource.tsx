@@ -1,16 +1,16 @@
 import { useResource } from '@civet/core';
 import type { FetchProviderType } from '@/FetchProvider';
 
+function onEvent(event: unknown) {
+  console.log(event);
+  return false;
+}
+
 export default function DemoResource() {
   const resource = useResource<FetchProviderType>({
     name: 'https://jsonplaceholder.typicode.com/todos/1',
     query: undefined,
-    events: {
-      onEvent: (event) => {
-        console.log(event);
-        return false;
-      },
-    },
+    events: { onEvent },
   });
 
   return (
