@@ -9,6 +9,7 @@ export type SSEReceiverOptions<
   Resource extends ResourceContextValue<GenericDataProvider>,
   EventType = MessageEvent,
 > = {
+  events?: string[];
   getEvents?: (
     resource: Resource | undefined,
     type: string,
@@ -63,7 +64,10 @@ export default class SSEReceiver<
     const controller = new AbortController();
     controller.signal.addEventListener('abort', unsubResource);
 
-    const types = options?.events?.length ? options.events : ['message'];
+    let types: string[] = [];
+    if (options?.events) types = options.events;
+    else if (this.options.events) types = this.options.events;
+    if (types.length === 0) types = ['message'];
     types.forEach((type) => {
       this.eventSource.addEventListener(
         type,
