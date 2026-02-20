@@ -68,6 +68,10 @@ class FetchProvider<
     this.options = options;
   }
 
+  normalizeResource(resource: string): string {
+    return new URL(resource, this.options.baseURL).toString();
+  }
+
   handleGet(
     url: string,
     query: Query,
@@ -76,10 +80,6 @@ class FetchProvider<
     abortSignal: AbortSignalProxy,
   ): Promise<ResponseType> {
     return this.request(url, query, options, meta, abortSignal);
-  }
-
-  normalizeResource(resource: string): string {
-    return new URL(resource, this.options.baseURL).toString();
   }
 
   async request<
@@ -99,7 +99,7 @@ class FetchProvider<
     const controller = new AbortController();
     abortSignal?.listen(controller.abort.bind(controller));
 
-    const requestURL = new URL(url);
+    const requestURL = new URL(url, this.options.baseURL);
     const headers = new Headers(query?.headers);
     const request = { ...query, headers };
     await this.options.modifyRequest?.(requestURL, request, meta);
