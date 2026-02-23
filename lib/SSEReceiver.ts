@@ -1,7 +1,7 @@
-import type {
-  GenericDataProvider,
+import {
   Notifier,
-  ResourceContextValue,
+  type GenericDataProvider,
+  type ResourceContextValue,
 } from '@civet/core';
 import { EventReceiver } from '@civet/events';
 
@@ -37,16 +37,26 @@ export default class SSEReceiver<
     EventType
   >,
 > extends EventReceiver<EventType, Resource, Options> {
-  readonly eventSource: EventSource;
+  private _eventSource: EventSource | undefined;
   private options: SSEReceiverOptions<Resource, EventType>;
+  private notifier: Notifier<[]> = new Notifier();
 
   constructor(
-    eventSource: EventSource,
+    eventSource: EventSource | undefined,
     options: SSEReceiverOptions<Resource, EventType> = {},
   ) {
     super();
-    this.eventSource = eventSource;
+    this._eventSource = eventSource;
     this.options = options;
+  }
+
+  get eventSource(): EventSource | undefined {
+    return this._eventSource;
+  }
+
+  setEventSource(eventSource: EventSource) {
+    this._eventSource = eventSource;
+    this.notifier.trigger();
   }
 
   handleSubscribe(
@@ -68,18 +78,36 @@ export default class SSEReceiver<
     if (options?.events) types = options.events;
     else if (this.options.events) types = this.options.events;
     if (types.length === 0) types = ['message'];
-    types.forEach((type) => {
-      this.eventSource.addEventListener(
-        type,
-        async (event: MessageEvent) => {
-          if (options?.getEvents)
-            return handler(await options.getEvents(resource, type, event));
-          if (this.options.getEvents)
-            return handler(await this.options.getEvents(resource, type, event));
-          return handler([event as EventType]);
-        },
-        { signal: controller.signal },
-      );
+
+    let sourceController = new AbortController();
+    const registerEventHandlers = () => {
+      types.forEach((type) => {
+        this.eventSource?.addEventListener(
+          type,
+          async (event: MessageEvent) => {
+            if (options?.getEvents)
+              return handler(await options.getEvents(resource, type, event));
+            if (this.options.getEvents)
+              return handler(
+                await this.options.getEvents(resource, type, event),
+              );
+            return handler([event as EventType]);
+          },
+          {
+            signal: AbortSignal.any([
+              controller.signal,
+              sourceController.signal,
+            ]),
+          },
+        );
+      });
+    };
+    registerEventHandlers();
+
+    this.notifier.subscribe(() => {
+      sourceController.abort();
+      sourceController = new AbortController();
+      registerEventHandlers();
     });
 
     return controller.abort.bind(controller);
