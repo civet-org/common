@@ -9,18 +9,18 @@ export type FetchProviderOptions<
   baseURL?: string | URL;
   modifyRequest?: (
     url: URL,
-    request: RequestInit,
+    request: FetchQuery,
     meta: MetaType,
   ) => Promise<void> | void;
   getResponse?: (
     url: URL,
-    request: RequestInit,
+    request: FetchQuery,
     response: Response,
     meta: MetaType,
   ) => Promise<ResponseType> | ResponseType;
   handleError?: (
     url: URL,
-    request: RequestInit,
+    request: FetchQuery,
     response: Response,
     meta: MetaType,
   ) => Promise<ResponseType> | ResponseType;
@@ -40,13 +40,13 @@ export type FetchOptions<
   noText?: boolean;
   getResponse?: (
     url: URL,
-    request: RequestInit,
+    request: FetchQuery,
     response: Response,
     meta: MetaType,
   ) => Promise<ResponseType> | ResponseType;
   handleError?: (
     url: URL,
-    request: RequestInit,
+    request: FetchQuery,
     response: Response,
     meta: MetaType,
   ) => Promise<ResponseType> | ResponseType;
@@ -55,7 +55,7 @@ export type FetchOptions<
 class FetchProvider<
   Item = unknown,
   ResponseType extends Item | Item[] = Item | Item[],
-  Query extends FetchQuery | undefined = RequestInit | undefined,
+  Query extends FetchQuery | undefined = FetchQuery | undefined,
   MetaType extends Meta = Meta,
   Options extends FetchOptions<Item, MetaType, ResponseType> = FetchOptions<
     Item,
