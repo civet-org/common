@@ -26,6 +26,10 @@ export type FetchProviderOptions<
   ) => Promise<ResponseType> | ResponseType;
 };
 
+export type FetchQuery = RequestInit & {
+  search?: string[][] | Record<string, string> | string | URLSearchParams;
+};
+
 export type FetchOptions<
   Item = unknown,
   MetaType extends Meta = Meta,
@@ -51,7 +55,7 @@ export type FetchOptions<
 class FetchProvider<
   Item = unknown,
   ResponseType extends Item | Item[] = Item | Item[],
-  Query extends RequestInit | undefined = RequestInit | undefined,
+  Query extends FetchQuery | undefined = RequestInit | undefined,
   MetaType extends Meta = Meta,
   Options extends FetchOptions<Item, MetaType, ResponseType> = FetchOptions<
     Item,
@@ -69,7 +73,10 @@ class FetchProvider<
   }
 
   normalizeResource(resource: string): string {
-    return new URL(resource, this.options.baseURL).toString();
+    const url = new URL(resource, this.options.baseURL);
+    url.search = '';
+    url.hash = '';
+    return url.toString();
   }
 
   handleGet(
@@ -100,6 +107,9 @@ class FetchProvider<
     abortSignal?.listen(controller.abort.bind(controller));
 
     const requestURL = new URL(url, this.options.baseURL);
+    new URLSearchParams(query?.search)?.forEach((value, name) => {
+      requestURL.searchParams.append(name, value);
+    });
     const headers = new Headers(query?.headers);
     const request = { ...query, headers };
     await this.options.modifyRequest?.(requestURL, request, meta);
