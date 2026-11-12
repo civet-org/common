@@ -8,12 +8,17 @@ import { EventReceiver } from '@civet/events';
 export type SSEReceiverOptions<
   Resource extends ResourceContextValue<GenericDataProvider>,
   EventType = MessageEvent,
+  Options extends SSEOptions<Resource, EventType> = SSEOptions<
+    Resource,
+    EventType
+  >,
 > = {
   events?: string[];
   getEvents?: (
     resource: Resource | undefined,
     type: string,
     event: MessageEvent,
+    options?: Options,
   ) => Promise<EventType[]> | EventType[];
 };
 
@@ -38,12 +43,12 @@ export default class SSEReceiver<
   >,
 > extends EventReceiver<EventType, Resource, Options> {
   private _eventSource: EventSource | undefined;
-  private options: SSEReceiverOptions<Resource, EventType>;
+  private options: SSEReceiverOptions<Resource, EventType, Options>;
   private notifier: Notifier<[]> = new Notifier();
 
   constructor(
     eventSource: EventSource | undefined,
-    options: SSEReceiverOptions<Resource, EventType> = {},
+    options: SSEReceiverOptions<Resource, EventType, Options> = {},
   ) {
     super();
     this._eventSource = eventSource;
@@ -89,7 +94,7 @@ export default class SSEReceiver<
               return handler(await options.getEvents(resource, type, event));
             if (this.options.getEvents)
               return handler(
-                await this.options.getEvents(resource, type, event),
+                await this.options.getEvents(resource, type, event, options),
               );
             return handler([event as EventType]);
           },
